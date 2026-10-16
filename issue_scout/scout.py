@@ -22,7 +22,7 @@ POLICY_FILES = [
 POLICY_RULES = [
     (
         "closed",
-        r"paused accepting pull requests|not accepting (outside |external )?(pull requests|contributions)",
+        r"paused accepting pull requests|not accepting (outside |external )?(pull requests|contributions)(?! (that|which|for))",
     ),
     (
         "banned",
@@ -37,7 +37,7 @@ POLICY_RULES = [
         "welcome",
         r"welcome[sd]? (the )?(thoughtful |responsible )?(use of )?(AI|LLM)|"
         r"(AI|LLM)[- ]assisted contributions are welcome|accepts? AI[- ]generated|"
-        r"may use AI tools|AI tools .{0,60}(is|are) welcome|welcome the use of AI|welcome contributions from all developers, including those who use AI",
+        r"may use AI tools|AI tools .{0,60}(is|are) welcome|welcome the use of AI|welcomes? contributions .{0,80}(AI|Artificial Intelligence)",
     ),
     (
         "strict",

@@ -38,6 +38,11 @@ def test_policy_closed_beats_welcome():
     assert classify_policy({"CONTRIBUTING.md": text}).verdict == "closed"
 
 
+def test_policy_partial_pr_restriction_is_not_closed():
+    text = "Prettier is not accepting pull requests that add new formatting options."
+    assert classify_policy({"CONTRIBUTING.md": text}).verdict == "none"
+
+
 def test_policy_approval_first():
     text = "- The Pull Request must link to a issue or discussion where a solution has been approved by a maintainer."
     policy = classify_policy({"AI_POLICY.md": text})
@@ -61,6 +66,8 @@ def test_policy_welcome_phrasings():
         "We welcome the use of AI when contributing to Pydantic.",
         "The use of AI tools to interact with this project is welcome under the following principles:",
         "You may use AI tools when contributing to Starlette.",
+        "ESLint welcomes contributions from everyone, including those created with the assistance "
+        "of Artificial Intelligence (AI) tools.",
     ):
         assert classify_policy({"CONTRIBUTING.md": text}).verdict == "welcome", text
 
