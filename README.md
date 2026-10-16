@@ -1,100 +1,94 @@
+<div align="center">
+
 # 🔭 Issue Scout
 
 **Find fresh, unclaimed GitHub issues in projects that actually want your help.**
 
-Picking an open-source issue in 2026 is a race. Popular bugs get two or three pull requests
-within hours, and more and more projects close AI-assisted PRs, or ban them outright.
-Issue Scout checks both things before you write a line of code:
+[![tests](https://github.com/saihardhikreddy/issue-scout/actions/workflows/tests.yml/badge.svg)](https://github.com/saihardhikreddy/issue-scout/actions/workflows/tests.yml)
+[![python](https://img.shields.io/badge/python-3.10%2B-3776ab?logo=python&logoColor=white)](pyproject.toml)
+[![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![live demo](https://img.shields.io/badge/live%20demo-try%20it%20in%20your%20browser-ff7a59)](https://saihardhikreddy.github.io/issue-scout/)
+[![dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)](pyproject.toml)
 
-- 🆕 **Is anyone already on it?** It looks for open, linked or merged PRs and for assignees,
-  and it flags issues where earlier PRs were closed unmerged.
-- 🤖 **Will the project accept my PR?** It reads `AI_POLICY.md` and `CONTRIBUTING.*`
-  (following symlinks) and sorts each project into a clear verdict.
-- 📈 **Which issue first?** It ranks the remaining issues by freshness, activity and labels.
+[**Live demo**](https://saihardhikreddy.github.io/issue-scout/) ·
+[Quick start](#-quick-start) ·
+[Usage](#-usage) ·
+[How it works](#-how-it-works) ·
+[Claude Code skill](#-use-it-as-a-claude-code-skill)
 
-By default it searches **all of GitHub**, not a fixed list. It runs two searches and merges them:
+<img src="docs/images/demo.gif" alt="Issue Scout searching GitHub for fresh Python issues" width="860">
 
-1. **Repo-first:** find active, popular repositories (by language, topic and stars) that have
-   good-first-issue or help-wanted issues, then read each one's newest issues.
-2. **Issue-first:** search issues directly by label, language and age. This catches projects
-   that the repository search misses.
+</div>
 
-Every candidate is then checked for open, linked or merged PRs, its project's AI policy is read
-(and cached for a week), and all issues are ranked on one scale. Repositories are read a few at a
-time over GraphQL, so a full search takes under a minute. It also skips issues in mostly non-Latin
-scripts by default (`--any-script` keeps them) and shows at most 3 issues per project.
+## Why
 
-```text
-$ issue-scout -l python --top 3
+Picking an open-source issue is now a race. On popular projects a fresh bug often gets two or
+three pull requests within hours, and more and more projects close AI-assisted PRs, or ban them
+outright. Issue Scout answers three questions before you write a line of code:
 
-Top 3 of 92 fresh, unclaimed issues
+| | Question | How Issue Scout answers it |
+| --- | --- | --- |
+| 🆕 | **Is anyone already on it?** | Looks for open, linked and merged PRs and assignees, and flags issues whose earlier PRs were closed unmerged. |
+| 🤖 | **Will the project accept my PR?** | Reads `AI_POLICY.md` and `CONTRIBUTING.*` (following symlinks), quotes the line that matters, and gives a clear verdict. |
+| 📈 | **Which issue first?** | Ranks every candidate on one scale using freshness, labels, discussion, AI policy and project popularity. |
 
-  1. Pick categories for integrations the script can't place
-     home-assistant/core #186846  (91,562 stars, Python)  score 20.0  WELCOME
-     0d old, 0 comments, beginner-friendly label
-  2. app crash down after select model in llm node
-     langgenius/dify #44195  (158,645 stars, Python)  score 17.9  WELCOME
-     0d old, 0 comments, bug
-  3. issue: Adding someone in the Access dialog of a Public item makes it Private ...
-     open-webui/open-webui #32539  (155,895 stars, Python)  score 17.5  NONE
-     0d old, 1 comments, beginner-friendly label, bug
-```
+## ✨ Features
 
-You can also scan specific projects, which groups results by project and quotes the policy line:
+- **Searches all of GitHub.** It has no fixed list: it finds active, popular projects by
+  language, topic and stars, and also searches issues directly.
+- **AI-policy aware.** It sorts each project into `WELCOME`, `APPROVAL-FIRST`, `STRICT`,
+  `BANNED` or `CLOSED`, and hides projects that won't take your PR.
+- **Spots PR floods.** It warns when a project keeps closing recent PRs, which often means
+  agent-made or drive-by PRs get auto-closed.
+- **Fast and polite to the API.** It reads several repositories per GraphQL request, in
+  parallel, caches policies for a week, and backs off on rate limits. A full search takes under a minute.
+- **No dependencies.** It's pure Python plus the GitHub CLI you already use.
+- **Two front ends.** It runs as a CLI with text or `--json` output, and as a
+  [live web demo](https://saihardhikreddy.github.io/issue-scout/) that runs in your browser.
+- **Claude Code skill included**, with guardrails that stop it opening PRs you haven't reviewed.
 
-```text
-$ issue-scout --preset python --top 1
+## 📸 Screenshots
 
-sqlfluff/sqlfluff  (9,978 stars)  WELCOME: AI-assisted PRs welcome (you must understand and own the change)
-  policy: "AI-assisted contributions are welcome when they meet the same quality," [CONTRIBUTING.md]
-  warning: 10 recent PRs on these issues were closed unmerged; the project may be closing drive-by or agent-made PRs
-    9.5  #8738 T-SQL: GROUP BY GROUPING SETS with more than one set fails to parse
-         3d old, 0 comments, bug, 2 earlier PR(s) were closed
+<table>
+  <tr>
+    <td width="50%"><b>Search all of GitHub</b><br><img src="docs/images/discover.svg" alt="Discovery results"></td>
+    <td width="50%"><b>Check projects' AI policies</b><br><img src="docs/images/policies.svg" alt="Policy check"></td>
+  </tr>
+  <tr>
+    <td width="50%"><b>Scan named projects</b><br><img src="docs/images/repos.svg" alt="Per-project report"></td>
+    <td width="50%"><b>Live demo in the browser</b><br><a href="https://saihardhikreddy.github.io/issue-scout/"><img src="docs/images/live-demo.jpg" alt="Live web demo"></a></td>
+  </tr>
+</table>
 
-Textualize/rich  (57,550 stars)  APPROVAL-FIRST: needs maintainer sign-off on the approach before a PR
-  policy: "- The Pull Request must link to a issue or discussion where a solution has been approv" [AI_POLICY.md]
-    8.3  #4238 [BUG] Traceback.extract loops forever when __cause__ and __context__ form a cycle
+All screenshots come from real runs on October 16, 2026.
 
-streamlit/streamlit  (46,008 stars)  CLOSED: not taking outside PRs
-```
+## 🚀 Quick start
 
-## Policy verdicts
+**Try it without installing:** open the [live demo](https://saihardhikreddy.github.io/issue-scout/).
 
-| Verdict | Meaning |
-| --- | --- |
-| `WELCOME` | AI-assisted PRs are accepted. You still have to understand and own the change. |
-| `APPROVAL-FIRST` | A maintainer must approve the approach on the issue before a PR. |
-| `STRICT` | AI is tolerated, but low-effort or agent-driven PRs are closed or the account banned. |
-| `BANNED` | AI contributions are not allowed. Issues are hidden by default. |
-| `CLOSED` | The project isn't taking outside PRs, or it's archived. Issues are hidden by default. |
-| `MENTIONS-AI` / `NONE` | No clear rule was found, so read the contributing guide yourself. |
-
-The verdict comes from keyword rules, so treat it as a pointer and read the quoted line before you start.
-
-## Install
-
-You need Python 3.10+ and the [GitHub CLI](https://cli.github.com/), logged in with `gh auth login`.
+**Install the CLI.** You need Python 3.10+ and the [GitHub CLI](https://cli.github.com/), logged in with `gh auth login`.
 
 ```bash
-git clone https://github.com/saihardhikreddy/issue-scout
-cd issue-scout
-pip install -e .
+pip install git+https://github.com/saihardhikreddy/issue-scout
+issue-scout -l python
 ```
 
-## Usage
+## 🧭 Usage
 
 ```bash
 issue-scout                                  # search all of GitHub
 issue-scout -l python -l rust                # only these languages
 issue-scout --topic cli --min-stars 2000     # by topic, bigger projects only
-issue-scout --label "good first issue"       # only this label (default: good first issue, help wanted, bug)
+issue-scout --label "good first issue"       # only this label
 issue-scout --label any --days 3             # any label, last 3 days
 issue-scout --query "org:microsoft"          # any extra GitHub search qualifiers
 issue-scout owner/repo other/repo            # just these projects
-issue-scout --preset python                  # a built-in list of popular projects
-issue-scout --preset python --policy-only    # just their AI policies
+issue-scout --preset python --policy-only    # AI policies of popular Python projects
 issue-scout -l go --json                     # machine-readable output
 ```
+
+<details>
+<summary><b>All options</b></summary>
 
 | Option | Default | What it does |
 | --- | --- | --- |
@@ -112,29 +106,69 @@ issue-scout -l go --json                     # machine-readable output
 | `--include-claimed` | off | Also show issues that have open PRs |
 | `--all-policies` | off | Also show issues from `BANNED` and `CLOSED` projects |
 | `--any-script` | off | Keep issues whose titles are mostly in non-Latin scripts |
+| `--preset` | none | Built-in lists of popular projects: `python`, `js` |
+| `--policy-only` | off | Only report each named project's AI policy |
+| `--json` | off | Machine-readable output |
+| `--color` | auto | `auto`, `always` or `never` |
 
-### How issues are ranked
+</details>
 
-Each issue starts at 10 points. It loses points for age (up to 10 at 60 days), for comments,
-for looking like a discussion or feature request, for labels that need a maintainer decision,
-and for earlier PRs that were closed unmerged. It gains points for beginner-friendly and bug
-labels, a welcoming AI policy, and the project's popularity. Projects that ban AI or don't take
-outside PRs are left out unless you pass `--all-policies`.
+### Policy verdicts
 
-## Use it as a Claude Code skill
+| Verdict | Meaning |
+| --- | --- |
+| 🟢 `WELCOME` | AI-assisted PRs are accepted. You still have to understand and own the change. |
+| 🟡 `APPROVAL-FIRST` | A maintainer must approve the approach on the issue before a PR. |
+| 🟣 `STRICT` | AI is tolerated, but low-effort or agent-driven PRs are closed, or the account is banned. |
+| 🔴 `BANNED` | AI contributions are not allowed. Hidden by default. |
+| 🔴 `CLOSED` | Not taking outside PRs, or archived. Hidden by default. |
+| 🔵 `MENTIONS-AI` / `NONE` | No clear rule was found, so read the contributing guide yourself. |
 
-Copy `skills/issue-scout` into `~/.claude/skills/` (or your project's `.claude/skills/`).
-Claude will then run the scan when you ask something like *"find me an issue I can contribute to"*.
-The skill also tells Claude to re-check that an issue is free before coding, and never to open a PR
-until you've reviewed the change yourself.
+> [!NOTE]
+> Verdicts come from keyword rules. Treat them as a pointer and read the quoted line before you start.
 
-## Development
+## 🔍 How it works
+
+```mermaid
+flowchart LR
+    A[Your filters<br>language · topic · stars · labels] --> B[Repo-first search<br>active, popular projects]
+    A --> C[Issue-first search<br>labelled issues anywhere]
+    B --> D[Read newest issues<br>5 repos per GraphQL call]
+    C --> E[Merge and de-duplicate]
+    D --> E
+    E --> F{Claimed?<br>open, linked or merged PR,<br>assignee}
+    F -- yes --> X[drop]
+    F -- no --> G[Read AI policy<br>cached for 7 days]
+    G --> H{Banned or<br>closed?}
+    H -- yes --> X
+    H -- no --> I[Score and rank<br>max 3 per project]
+```
+
+**Ranking.** Each issue starts at 10 points. It loses points for age (up to 10 at 60 days), for
+comments, for looking like a discussion or feature request, for labels that need a maintainer
+decision, and for earlier PRs that were closed unmerged. It gains points for beginner-friendly
+and bug labels, a welcoming AI policy, and the project's popularity.
+
+## 🤖 Use it as a Claude Code skill
+
+Copy [`skills/issue-scout`](skills/issue-scout/SKILL.md) into `~/.claude/skills/` (or your project's `.claude/skills/`).
+Then ask Claude something like *"find me a Python issue I can contribute to"*. The skill tells Claude to:
+
+- respect each project's AI-policy verdict,
+- re-check that an issue is still free before writing code, and
+- never open a pull request until you've reviewed the change yourself.
+
+## 🛠️ Development
 
 ```bash
-pip install pytest
+git clone https://github.com/saihardhikreddy/issue-scout
+cd issue-scout
+pip install -e . pytest
 python -m pytest
 ```
 
-## License
+The live demo is a single static page at [`docs/index.html`](docs/index.html), served by GitHub Pages.
 
-MIT
+## 📄 License
+
+[MIT](LICENSE)

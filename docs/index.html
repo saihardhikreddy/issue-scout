@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Issue Scout · Live Demo</title>
+<meta name="description" content="Find fresh, unclaimed GitHub issues in projects whose AI-contribution policy fits you. Runs in your browser.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔭</text></svg>">
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --panel-2: #1c2230; --border: #30363d;
+    --text: #e6edf3; --muted: #8b949e; --accent: #58a6ff;
+    --green: #3fb950; --yellow: #d29922; --red: #f85149; --purple: #bc8cff; --cyan: #39c5cf;
+    --mono: ui-monospace, "Cascadia Code", Consolas, "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 15px/1.5 -apple-system, "Segoe UI", system-ui, sans-serif; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 32px 16px 64px; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  h1 { font-size: 28px; margin: 0; letter-spacing: -0.02em; }
+  h1 span { color: var(--muted); font-weight: 400; font-size: 16px; margin-left: 8px; }
+  .tagline { color: var(--muted); margin: 6px 0 24px; max-width: 680px; }
+  .gh { border: 1px solid var(--border); padding: 6px 12px; border-radius: 8px; color: var(--text); font-size: 14px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .tabs { display: flex; gap: 6px; margin-bottom: 16px; }
+  .tab { background: none; border: 1px solid var(--border); color: var(--muted); padding: 7px 14px;
+         border-radius: 8px; cursor: pointer; font: inherit; }
+  .tab[aria-selected="true"] { background: var(--panel-2); color: var(--text); border-color: var(--accent); }
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+  input, textarea, select { width: 100%; background: var(--bg); color: var(--text); border: 1px solid var(--border);
+         border-radius: 8px; padding: 9px 11px; font: 14px var(--mono); }
+  textarea { min-height: 84px; resize: vertical; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+  .row { margin-top: 12px; }
+  .actions { display: flex; align-items: center; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+  button.go { background: #238636; color: #fff; border: 0; padding: 10px 18px; border-radius: 8px;
+              font: 600 14px inherit; cursor: pointer; }
+  button.go:disabled { opacity: .6; cursor: progress; }
+  details { margin-top: 12px; color: var(--muted); font-size: 13px; }
+  details input { margin-top: 6px; }
+  .log { font: 12.5px var(--mono); color: var(--muted); margin-top: 16px; white-space: pre-wrap; max-height: 140px; overflow: auto; }
+  .summary { margin: 28px 0 12px; color: var(--muted); }
+  .issue { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin-bottom: 10px;
+           display: grid; grid-template-columns: 54px 1fr; gap: 14px; }
+  .score { font: 700 18px var(--mono); color: var(--text); text-align: center; padding-top: 2px; }
+  .score small { display: block; font: 11px inherit; color: var(--muted); }
+  .title { font-weight: 600; font-size: 15.5px; overflow-wrap: anywhere; }
+  .meta { color: var(--muted); font-size: 13px; margin-top: 4px; display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
+  .badge { font: 600 11px var(--mono); padding: 2px 8px; border-radius: 99px; border: 1px solid currentColor; letter-spacing: .03em; }
+  .welcome { color: var(--green); } .approval-first { color: var(--yellow); } .strict { color: var(--purple); }
+  .banned, .closed { color: var(--red); } .none, .mentions-ai { color: var(--cyan); }
+  .evidence { font-size: 12.5px; color: var(--muted); margin-top: 6px; font-style: italic; overflow-wrap: anywhere; }
+  .warn { color: var(--yellow); font-size: 12.5px; margin-top: 6px; }
+  .note { color: var(--muted); font-size: 13px; margin-top: 28px; border-top: 1px solid var(--border); padding-top: 16px; }
+  code { font-family: var(--mono); background: var(--panel-2); padding: 1px 5px; border-radius: 5px; font-size: 90%; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🔭 Issue Scout <span>live demo</span></h1>
+    <a class="gh" href="https://github.com/saihardhikreddy/issue-scout">★ View on GitHub</a>
+  </header>
+  <p class="tagline">Find fresh, unclaimed GitHub issues in projects whose AI-contribution policy fits you.
+    This page runs entirely in your browser against the public GitHub API.</p>
+
+  <div class="card">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" aria-selected="true" data-mode="search">Search GitHub</button>
+      <button class="tab" role="tab" aria-selected="false" data-mode="repos">Check projects</button>
+    </div>
+
+    <div id="mode-search">
+      <div class="grid">
+        <div><label for="lang">Language</label><input id="lang" value="python" placeholder="any"></div>
+        <div><label for="label">Label</label>
+          <select id="label">
+            <option value="good first issue">good first issue</option>
+            <option value="help wanted">help wanted</option>
+            <option value="bug">bug</option>
+            <option value="">any label</option>
+          </select></div>
+        <div><label for="days">Newer than (days)</label><input id="days" type="number" min="1" max="90" value="14"></div>
+        <div><label for="stars">Min stars</label><input id="stars" type="number" min="0" value="500"></div>
+      </div>
+    </div>
+
+    <div id="mode-repos" class="hidden">
+      <label for="repos">Projects (owner/name, one per line)</label>
+      <textarea id="repos">Textualize/rich
+pydantic/pydantic
+sqlfluff/sqlfluff
+yt-dlp/yt-dlp</textarea>
+    </div>
+
+    <details>
+      <summary>Optional: GitHub token for higher rate limits</summary>
+      Without a token GitHub allows about 10 searches a minute. A token with no scopes raises that a lot.
+      It is kept in this page's memory only and sent only to api.github.com.
+      <input id="token" type="password" placeholder="ghp_... (optional)" autocomplete="off">
+    </details>
+
+    <div class="actions">
+      <button class="go" id="go">Scout issues</button>
+      <span id="status" style="color: var(--muted); font-size: 14px"></span>
+    </div>
+    <div class="log" id="log"></div>
+  </div>
+
+  <div class="summary" id="summary"></div>
+  <div id="results"></div>
+
+  <p class="note">This demo is a lighter version of the CLI: it checks linked PRs, assignees and
+    each project's <code>AI_POLICY.md</code> / <code>CONTRIBUTING</code> files, but not every cross-referenced PR.
+    For the full search with ranking across up to 60 projects, install the CLI:
+    <code>pip install git+https://github.com/saihardhikreddy/issue-scout</code>.
+    Policy verdicts come from keyword rules, so read the project's guidelines before starting.</p>
+</div>
+
+<script>
+const POLICY_FILES = ["AI_POLICY.md", ".github/AI_POLICY.md", "CONTRIBUTING.md", ".github/CONTRIBUTING.md", "CONTRIBUTING.rst", "docs/CONTRIBUTING.md"];
+const POLICY_RULES = [
+  ["closed", /paused accepting pull requests|not accepting (outside |external )?(pull requests|contributions)(?! (that|which|for))/i],
+  ["banned", /(strictly )?forbids? the (usage|use) of (LLMs|AI)|no AI ?\/ ?no LLM|(do not|don't|cannot) accept (any )?(AI|LLM)[- ]generated|AI[- ]generated .{0,40}not (be )?accepted/i],
+  ["approval-first", /approved by a maintainer|must link to an? (issue|discussion) where/i],
+  ["welcome", /welcome[sd]? (the )?(thoughtful |responsible )?(use of )?(AI|LLM)|(AI|LLM)[- ]assisted contributions are welcome|accepts? AI[- ]generated|may use AI tools|AI tools .{0,60}(is|are) welcome|welcome the use of AI|welcomes? contributions .{0,80}(AI|Artificial Intelligence)/i],
+  ["strict", /unsupervised agentic|will be (permanently )?banned|discourage use of LLMs|closed without (further )?(review|discussion)/i],
+  ["mentions-ai", /\bAI\b|\bLLMs?\b|generative|Copilot|ChatGPT/],
+];
+const NOTES = {
+  closed: "not taking outside PRs", banned: "AI contributions banned",
+  "approval-first": "maintainer sign-off needed before a PR", strict: "AI tolerated, closely policed",
+  welcome: "AI-assisted PRs welcome", "mentions-ai": "mentions AI; read the policy", none: "no AI policy found",
+};
+const WEIGHT = { welcome: 3, "mentions-ai": 0, none: 0, "approval-first": -1, strict: -3, banned: -100, closed: -100 };
+const SKIP = /needs[- ]decision|needs[- ]design|proposal|rfc|question|discussion|wontfix|invalid|duplicate|tracking|upstream|blocked|deferred|stale/i;
+const GOOD = /good[- ]first|easy|help[- ]wanted|beginner|confirmed|low[- ]hanging/i;
+const BUG = /\bbug\b|type: ?bug|regression/i;
+const FEATURE = /enhancement|feature|feat\b/i;
+const TALK = /feedback|\brfc\b|proposal|discussion|roadmap|tracking issue|^\[?feat/i;
+
+const $ = (id) => document.getElementById(id);
+let mode = "search";
+document.querySelectorAll(".tab").forEach((tab) => tab.addEventListener("click", () => {
+  mode = tab.dataset.mode;
+  document.querySelectorAll(".tab").forEach((t) => t.setAttribute("aria-selected", t === tab));
+  $("mode-search").classList.toggle("hidden", mode !== "search");
+  $("mode-repos").classList.toggle("hidden", mode !== "repos");
+}));
+
+const log = (msg) => { $("log").textContent += msg + "\n"; $("log").scrollTop = 1e9; };
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+async function api(path) {
+  const headers = { Accept: "application/vnd.github+json" };
+  const token = $("token").value.trim();
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const res = await fetch(`https://api.github.com${path}`, { headers });
+  if (res.status === 403 || res.status === 429) {
+    throw new Error("GitHub rate limit reached. Wait a minute or add a token below.");
+  }
+  if (!res.ok) throw new Error(`GitHub API ${res.status} for ${path}`);
+  return res.json();
+}
+
+async function rawFile(repo, path) {
+  const res = await fetch(`https://raw.githubusercontent.com/${repo}/HEAD/${path}`);
+  return res.ok ? res.text() : null;
+}
+
+const looksLikeSymlink = (t) => { const s = t.trim(); return s.length > 0 && s.length < 200 && !/\s/.test(s) && /\.(md|rst|txt)$/i.test(s); };
+
+const policyCache = new Map();
+async function getPolicy(repo) {
+  if (policyCache.has(repo)) return policyCache.get(repo);
+  const files = {};
+  await Promise.all(POLICY_FILES.map(async (path) => {
+    let text = await rawFile(repo, path);
+    if (text && looksLikeSymlink(text)) {
+      const dir = path.includes("/") ? path.slice(0, path.lastIndexOf("/") + 1) : "";
+      text = await rawFile(repo, new URL(dir + text.trim(), "https://x/").pathname.slice(1));
+    }
+    if (text) files[path] = text;
+  }));
+  let policy = { verdict: "none" };
+  outer: for (const [verdict, rx] of POLICY_RULES) {
+    for (const path of POLICY_FILES) {
+      if (!files[path]) continue;
+      for (const line of files[path].split("\n")) {
+        if (rx.test(line)) { policy = { verdict, source: path, evidence: line.trim().slice(0, 200) }; break outer; }
+      }
+    }
+  }
+  policyCache.set(repo, policy);
+  return policy;
+}
+
+function since(days) {
+  return new Date(Date.now() - days * 864e5).toISOString().slice(0, 10);
+}
+
+function score(issue) {
+  const age = (Date.now() - new Date(issue.created_at)) / 864e5;
+  const labels = issue.labels.map((l) => l.name);
+  const reasons = [];
+  let s = 10 - Math.min(age, 60) / 6 - issue.comments * 1.5;
+  if (labels.some((l) => GOOD.test(l))) { s += 4; reasons.push("beginner-friendly label"); }
+  if (labels.some((l) => BUG.test(l))) { s += 2; reasons.push("bug"); }
+  if (labels.some((l) => SKIP.test(l))) { s -= 8; reasons.push("needs a maintainer decision"); }
+  if (TALK.test(issue.title)) { s -= 4; reasons.push("looks like a discussion"); }
+  else if (labels.some((l) => FEATURE.test(l))) { s -= 1; reasons.push("feature request"); }
+  if (issue.policy) s += WEIGHT[issue.policy.verdict];
+  if (issue.stars) s += Math.min(Math.log10(issue.stars), 5) * 0.6;
+  issue.score = Math.round(s * 10) / 10;
+  issue.age = age;
+  issue.reasons = reasons;
+}
+
+const baseQuery = (days) => `is:issue is:open no:assignee -linked:pr archived:false comments:<=2 created:>=${since(days)}`;
+
+async function searchMode() {
+  const days = Number($("days").value) || 14;
+  const minStars = Number($("stars").value) || 0;
+  const lang = $("lang").value.trim();
+  const langQ = lang ? ` language:${lang.includes(" ") ? `"${lang}"` : lang}` : "";
+  const label = $("label").value;
+  const labelQ = label ? ` label:"${label}"` : "";
+
+  const out = [];
+  const seen = new Set();
+  const add = (item, r) => {
+    if (!r || seen.has(item.html_url)) return;
+    seen.add(item.html_url);
+    Object.assign(item, { repo: r.full_name, stars: r.stargazers_count, language: r.language });
+    out.push(item);
+  };
+  const repoOf = (item) => item.repository_url.split("/repos/")[1];
+  const groupRepos = (repos, extraLen) => {
+    const groups = [];
+    let group = [];
+    for (const repo of repos) {
+      if (([...group, repo].map((r) => `repo:${r}`).join(" ").length + extraLen) > 240 && group.length) {
+        groups.push(group); group = [];
+      }
+      group.push(repo);
+    }
+    if (group.length) groups.push(group);
+    return groups;
+  };
+
+  // 1. Repo-first: active, popular projects that tag beginner or help-wanted issues,
+  //    then their fresh issues (any label; labels only change the score).
+  const labelRepoQ = label === "help wanted" ? " help-wanted-issues:>0" : " good-first-issues:>0";
+  const rq = `stars:>=${minStars} pushed:>=${since(days)} archived:false fork:false${langQ}${labelRepoQ}`;
+  log(`searching projects: ${rq}`);
+  const repoData = await api(`/search/repositories?q=${encodeURIComponent(rq)}&sort=stars&order=desc&per_page=40`);
+  const info = new Map(repoData.items.map((r) => [r.full_name.toLowerCase(), r]));
+  const base = baseQuery(days);
+  for (const g of groupRepos(repoData.items.map((r) => r.full_name), base.length).slice(0, 5)) {
+    const q = base + " " + g.map((r) => `repo:${r}`).join(" ");
+    try {
+      const data = await api(`/search/issues?q=${encodeURIComponent(q)}&sort=created&order=desc&per_page=60`);
+      for (const item of data.items) add(item, info.get(repoOf(item).toLowerCase()));
+      log(`  ${g.length} projects: ${data.items.length} fresh issues`);
+    } catch (e) { log(`  ${e.message}`); break; }
+  }
+
+  // 2. Issue-first: labelled issues anywhere on GitHub, kept if the project has enough stars.
+  try {
+    const q = base + langQ + labelQ;
+    log(`searching issues: ${q}`);
+    const data = await api(`/search/issues?q=${encodeURIComponent(q)}&sort=created&order=desc&per_page=100`);
+    const byRepo = new Map();
+    for (const item of data.items) {
+      const repo = repoOf(item);
+      if (info.has(repo.toLowerCase())) { add(item, info.get(repo.toLowerCase())); continue; }
+      if (!byRepo.has(repo)) byRepo.set(repo, []);
+      byRepo.get(repo).push(item);
+    }
+    const extra = ` stars:>=${minStars} fork:true`;
+    for (const g of groupRepos([...byRepo.keys()], extra.length).slice(0, 2)) {
+      const res = await api(`/search/repositories?q=${encodeURIComponent(g.map((r) => `repo:${r}`).join(" ") + extra)}&per_page=100`);
+      for (const r of res.items) {
+        if (r.archived || r.fork) continue;
+        for (const item of byRepo.get(r.full_name) || []) add(item, r);
+      }
+    }
+  } catch (e) { log(`  ${e.message}`); }
+  log(`${out.length} fresh issues in ${new Set(out.map((i) => i.repo)).size} projects`);
+
+  // 3. AI policies come from raw files, which don't count against the API limit.
+  const repos = [...new Set(out.map((i) => i.repo))];
+  log(`reading AI policies for ${repos.length} projects`);
+  const policies = new Map(await Promise.all(repos.map(async (r) => [r, await getPolicy(r)])));
+  const kept = out.filter((i) => {
+    i.policy = policies.get(i.repo);
+    return !["banned", "closed"].includes(i.policy.verdict);
+  });
+  kept.forEach(score);
+  kept.sort((a, b) => b.score - a.score);
+  const perRepo = new Map();
+  return kept.filter((i) => {
+    perRepo.set(i.repo, (perRepo.get(i.repo) || 0) + 1);
+    return perRepo.get(i.repo) <= 3;  // keep the list varied
+  });
+}
+
+async function reposMode() {
+  const repos = $("repos").value.split(/[\s,]+/).map((r) => r.trim().replace(/^https:\/\/github\.com\//, "").replace(/\/$/, "")).filter((r) => /^[\w.-]+\/[\w.-]+$/.test(r));
+  if (!repos.length) throw new Error("Enter at least one project as owner/name.");
+  const out = [];
+  for (const repo of repos.slice(0, 10)) {
+    const policy = await getPolicy(repo);
+    log(`${repo}: ${policy.verdict}`);
+    if (["banned", "closed"].includes(policy.verdict)) {
+      out.push({ repo, policy, placeholder: true });
+      continue;
+    }
+    const q = `${baseQuery(30)} repo:${repo}`;
+    const data = await api(`/search/issues?q=${encodeURIComponent(q)}&sort=created&order=desc&per_page=10`);
+    if (!data.items.length) out.push({ repo, policy, placeholder: true, empty: true });
+    for (const issue of data.items.slice(0, 5)) {
+      Object.assign(issue, { repo, policy });
+      out.push(issue);
+    }
+  }
+  return out;
+}
+
+function render(items) {
+  const real = items.filter((i) => !i.placeholder);
+  real.forEach(score);
+  real.sort((a, b) => b.score - a.score);
+  $("summary").textContent = real.length
+    ? `${real.length} fresh, unclaimed issue${real.length === 1 ? "" : "s"}`
+    : "No fresh, unclaimed issues matched. Try more days, a lower star count, or any label.";
+  const placeholders = items.filter((i) => i.placeholder).map((p) => `
+    <div class="issue"><div class="score">–</div><div>
+      <div class="title">${esc(p.repo)}</div>
+      <div class="meta"><span class="badge ${p.policy.verdict}">${p.policy.verdict.toUpperCase()}</span>
+        <span>${p.empty ? "no fresh unclaimed issues" : esc(NOTES[p.policy.verdict]) + ", issues hidden"}</span></div>
+      ${p.policy.evidence ? `<div class="evidence">“${esc(p.policy.evidence)}” · ${esc(p.policy.source)}</div>` : ""}
+    </div></div>`);
+  $("results").innerHTML = real.map((i) => `
+    <div class="issue">
+      <div class="score">${i.score}<small>score</small></div>
+      <div>
+        <div class="title"><a href="${esc(i.html_url)}" target="_blank" rel="noopener">${esc(i.title)}</a></div>
+        <div class="meta">
+          <span>${esc(i.repo)} #${i.number}</span>
+          ${i.stars ? `<span>★ ${i.stars.toLocaleString()}</span>` : ""}
+          ${i.language ? `<span>${esc(i.language)}</span>` : ""}
+          <span>${Math.round(i.age)}d old · ${i.comments} comments</span>
+          <span class="badge ${i.policy.verdict}" title="${esc(NOTES[i.policy.verdict])}">${i.policy.verdict.toUpperCase()}</span>
+        </div>
+        ${i.reasons.length ? `<div class="meta">${esc(i.reasons.join(" · "))}</div>` : ""}
+        ${i.policy.evidence ? `<div class="evidence">“${esc(i.policy.evidence)}” · ${esc(i.policy.source)}</div>` : ""}
+      </div>
+    </div>`).join("") + placeholders.join("");
+}
+
+$("go").addEventListener("click", async () => {
+  $("go").disabled = true; $("log").textContent = ""; $("results").innerHTML = ""; $("summary").textContent = "";
+  $("status").textContent = "Scouting…";
+  try {
+    render(mode === "search" ? await searchMode() : await reposMode());
+    $("status").textContent = "";
+  } catch (e) {
+    $("status").textContent = e.message;
+  } finally {
+    $("go").disabled = false;
+  }
+});
+</script>
+</body>
+</html>

@@ -48,6 +48,12 @@ def color(text: str, code: str, enabled: bool) -> str:
     return f"\033[{code}m{text}\033[0m" if enabled else text
 
 
+def wants_color(args: argparse.Namespace) -> bool:
+    if args.no_color or args.color == "never":
+        return False
+    return args.color == "always" or sys.stdout.isatty()
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="issue-scout",
@@ -85,7 +91,9 @@ def build_parser() -> argparse.ArgumentParser:
                    help="also show projects that ban AI or take no outside PRs")
     p.add_argument("--policy-only", action="store_true", help="only report each named repo's AI policy")
     p.add_argument("--json", action="store_true", help="print machine-readable JSON")
-    p.add_argument("--no-color", action="store_true")
+    p.add_argument("--color", choices=["auto", "always", "never"], default="auto",
+                   help="colored output (default: auto, when writing to a terminal)")
+    p.add_argument("--no-color", action="store_true", help="same as --color never")
     return p
 
 
@@ -110,7 +118,7 @@ def report_to_dict(r: RepoReport) -> dict:
 
 
 def print_reports(reports: list[RepoReport], args: argparse.Namespace) -> None:
-    use_color = not args.no_color and sys.stdout.isatty()
+    use_color = wants_color(args)
     width = shutil.get_terminal_size((100, 20)).columns
     top = args.top or 5
     for r in reports:
@@ -142,7 +150,7 @@ def print_reports(reports: list[RepoReport], args: argparse.Namespace) -> None:
 
 
 def print_discoveries(issues: list[Issue], args: argparse.Namespace) -> None:
-    use_color = not args.no_color and sys.stdout.isatty()
+    use_color = wants_color(args)
     width = shutil.get_terminal_size((100, 20)).columns
     shown = issues[: args.top or 25]
     if not shown:
