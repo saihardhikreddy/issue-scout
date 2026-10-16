@@ -124,3 +124,25 @@ def test_scoring_prefers_fresh_quiet_beginner_bugs():
     assert good.score > old.score
     assert good.score > decision.score
     assert "needs a maintainer decision" in decision.reasons
+
+
+def test_discussion_titles_rank_lower():
+    bug = parse_issue("o/r", node(days_ago=1, labels=["bug"]))
+    talk = parse_issue("o/r", node(days_ago=1, labels=["bug"]))
+    talk.title = "Return type inference: your feedback"
+    for issue in (bug, talk):
+        score_issue(issue)
+    assert bug.score > talk.score
+
+
+def test_policy_and_stars_raise_score():
+    from issue_scout.scout import Policy
+
+    plain = parse_issue("o/r", node())
+    popular = parse_issue("o/r", node())
+    popular.stars, popular.policy = 50_000, Policy("welcome")
+    strict = parse_issue("o/r", node())
+    strict.policy = Policy("strict")
+    for issue in (plain, popular, strict):
+        score_issue(issue)
+    assert popular.score > plain.score > strict.score

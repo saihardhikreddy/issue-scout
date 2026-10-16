@@ -12,7 +12,35 @@ Issue Scout checks both things before you write a line of code:
   (following symlinks) and sorts each project into a clear verdict.
 - 📈 **Which issue first?** It ranks the remaining issues by freshness, activity and labels.
 
-One GraphQL request per repository, so a scan of 15 projects takes about 10 seconds.
+By default it searches **all of GitHub**, not a fixed list. It runs two searches and merges them:
+
+1. **Repo-first:** find active, popular repositories (by language, topic and stars) that have
+   good-first-issue or help-wanted issues, then read each one's newest issues.
+2. **Issue-first:** search issues directly by label, language and age. This catches projects
+   that the repository search misses.
+
+Every candidate is then checked for open, linked or merged PRs, its project's AI policy is read
+(and cached for a week), and all issues are ranked on one scale. Repositories are read a few at a
+time over GraphQL, so a full search takes under a minute. It also skips issues in mostly non-Latin
+scripts by default (`--any-script` keeps them) and shows at most 3 issues per project.
+
+```text
+$ issue-scout -l python --top 3
+
+Top 3 of 92 fresh, unclaimed issues
+
+  1. Pick categories for integrations the script can't place
+     home-assistant/core #186846  (91,562 stars, Python)  score 20.0  WELCOME
+     0d old, 0 comments, beginner-friendly label
+  2. app crash down after select model in llm node
+     langgenius/dify #44195  (158,645 stars, Python)  score 17.9  WELCOME
+     0d old, 0 comments, bug
+  3. issue: Adding someone in the Access dialog of a Public item makes it Private ...
+     open-webui/open-webui #32539  (155,895 stars, Python)  score 17.5  NONE
+     0d old, 1 comments, beginner-friendly label, bug
+```
+
+You can also scan specific projects, which groups results by project and quotes the policy line:
 
 ```text
 $ issue-scout --preset python --top 1
@@ -56,21 +84,42 @@ pip install -e .
 ## Usage
 
 ```bash
-issue-scout --preset python                 # popular Python projects
-issue-scout --preset js                     # popular JavaScript projects
-issue-scout owner/repo other/repo --days 7  # your own list, last week only
-issue-scout --preset python --policy-only   # just the AI policies
-issue-scout --preset python --json          # machine-readable output
+issue-scout                                  # search all of GitHub
+issue-scout -l python -l rust                # only these languages
+issue-scout --topic cli --min-stars 2000     # by topic, bigger projects only
+issue-scout --label "good first issue"       # only this label (default: good first issue, help wanted, bug)
+issue-scout --label any --days 3             # any label, last 3 days
+issue-scout --query "org:microsoft"          # any extra GitHub search qualifiers
+issue-scout owner/repo other/repo            # just these projects
+issue-scout --preset python                  # a built-in list of popular projects
+issue-scout --preset python --policy-only    # just their AI policies
+issue-scout -l go --json                     # machine-readable output
 ```
 
 | Option | Default | What it does |
 | --- | --- | --- |
-| `--days` | 30 | Only issues newer than this |
+| `-l`, `--language` | all | Repository language (repeatable) |
+| `--topic` | none | Repository topic (repeatable) |
+| `--label` | good first issue, help wanted, bug | Issue labels to search (repeatable, `any` for none) |
+| `--min-stars` | 500 | Skip smaller projects |
+| `--days` | 14 (search), 30 (named repos) | Only issues newer than this |
 | `--max-comments` | 2 | Skip issues that already have more discussion |
-| `--top` | 5 | Issues shown per repo |
-| `--fetch` | 40 | Newest issues inspected per repo |
+| `--repo-limit` | 60 | Active repositories to read in the repo-first search |
+| `--search-limit` | 300 | Issues to pull from the issue-first search |
+| `--strategy` | both | `repos`, `issues` or `both` |
+| `--per-repo` | 3 | Most results from one project (0 for no cap) |
+| `--top` | 25 (search), 5 per repo | Results shown |
 | `--include-claimed` | off | Also show issues that have open PRs |
 | `--all-policies` | off | Also show issues from `BANNED` and `CLOSED` projects |
+| `--any-script` | off | Keep issues whose titles are mostly in non-Latin scripts |
+
+### How issues are ranked
+
+Each issue starts at 10 points. It loses points for age (up to 10 at 60 days), for comments,
+for looking like a discussion or feature request, for labels that need a maintainer decision,
+and for earlier PRs that were closed unmerged. It gains points for beginner-friendly and bug
+labels, a welcoming AI policy, and the project's popularity. Projects that ban AI or don't take
+outside PRs are left out unless you pass `--all-policies`.
 
 ## Use it as a Claude Code skill
 

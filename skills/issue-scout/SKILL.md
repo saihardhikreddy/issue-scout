@@ -16,13 +16,16 @@ and reads each project's AI-contribution policy so you don't prepare a fix that 
 
 ## Steps
 
-1. Run the scan. Use the user's repos if they named any, otherwise a preset:
+1. Run the scan. With no repos it searches all of GitHub; narrow it with what the user asked for:
 
    ```bash
-   issue-scout --preset python --top 3
-   issue-scout owner/repo another/repo --days 14
-   issue-scout --preset python --json   # when you need to process the results
+   issue-scout -l python --top 10                  # languages the user knows
+   issue-scout --topic cli --min-stars 2000        # a kind of project
+   issue-scout owner/repo another/repo             # projects the user named
+   issue-scout -l python --json                    # when you need to process the results
    ```
+
+   A full search takes up to a minute; progress goes to stderr.
 
 2. Read each repo's verdict before suggesting its issues:
    - `WELCOME`: AI-assisted PRs are accepted; the person submitting must understand and own the change.

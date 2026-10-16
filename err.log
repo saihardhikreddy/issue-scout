@@ -1,0 +1,17 @@
+searching repos: stars:>=500 pushed:>=2026-10-02 archived:false fork:false is:public language:python good-first-issues:>0 sort:stars
+searching repos: stars:>=500 pushed:>=2026-10-02 archived:false fork:false is:public language:python help-wanted-issues:>0 sort:stars
+found 46 active repositories
+reading issues: EbookFoundation/free-programming-books, practical-tutorials/project-based-learning, microsoft/markitdown, Significant-Gravitas/AutoGPT, langgenius/dify
+reading issues: nextlevelbuilder/ui-ux-pro-max-skill, Graphify-Labs/graphify, pytorch/pytorch, sherlock-project/sherlock, vllm-project/vllm
+reading issues: odysseus-dev/odysseus, home-assistant/core, abi/screenshot-to-code, 666ghj/MiroFish, unslothai/unsloth
+reading issues: hiyouga/LlamaFactory, apache/superset, docling-project/docling, scrapy/scrapy, keras-team/keras
+reading issues: RVC-Boss/GPT-SoVITS, pathwaycom/pathway, crewAIInc/crewAI, run-llama/llama_index, pandas-dev/pandas
+reading issues: microsoft/qlib, HKUDS/nanobot, exo-explore/exo, apache/airflow, getsentry/sentry
+reading issues: TheAlgorithms/Python, open-webui/open-webui, langchain-ai/langchain, Comfy-Org/ComfyUI, bytedance/deer-flow
+reading issues: tensorflow/models, openbq-org/OpenBB, scikit-learn/scikit-learn, ultralytics/yolov5, hesreallyhim/awesome-claude-code
+reading issues: 9001/copyparty, mitmproxy/mitmproxy, langchain-ai/langgraph, mingrammer/diagrams, psf/black
+reading issues: ManimCommunity/manim
+searching issues: is:issue is:open no:assignee -linked:pr archived:false created:>=2026-10-02 comments:<=2 language:python sort:created-desc label:"good first issue"
+searching issues: is:issue is:open no:assignee -linked:pr archived:false created:>=2026-10-02 comments:<=2 language:python sort:created-desc label:"help wanted"
+searching issues: is:issue is:open no:assignee -linked:pr archived:false created:>=2026-10-02 comments:<=2 language:python sort:created-desc label:bug
+reading AI policies for 10 more repositories
