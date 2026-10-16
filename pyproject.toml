@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "issue-scout"
+version = "0.1.0"
+description = "Find fresh, unclaimed GitHub issues in projects whose AI-contribution policy fits you."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{ name = "Sai Hardhik Reddy" }]
+dependencies = []
+
+[project.scripts]
+issue-scout = "issue_scout.cli:main"
+
+[tool.setuptools]
+packages = ["issue_scout"]
