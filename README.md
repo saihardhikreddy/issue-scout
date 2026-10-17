@@ -23,7 +23,7 @@
 ## Why
 
 Picking an open-source issue is now a race. On popular projects a fresh bug often gets two or
-three pull requests within hours, and more and more projects close AI-assisted PRs, or ban them
+three pull requests within hours, and more and more projects close AI-assiteded PRs, or ban them
 outright. Issue Scout answers three questions before you write a line of code:
 
 | | Question | How Issue Scout answers it |
