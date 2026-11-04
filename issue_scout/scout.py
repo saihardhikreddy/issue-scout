@@ -125,7 +125,10 @@ def graphql(query: str, variables: dict | None = None, *, retries: int = 3) -> d
     for attempt in range(retries + 1):
         proc = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8")
         out = proc.stdout.strip()
-        data = json.loads(out) if out.startswith("{") else {}
+        try:
+            data = json.loads(out) if out.startswith("{") else {}
+        except ValueError:  # truncated or garbled output: treat it as an error message
+            data = {}
         if proc.returncode == 0 or data.get("data"):
             return data.get("data") or {}
         message = proc.stderr.strip() or out

@@ -166,3 +166,30 @@ def test_failed_policy_lookup_is_not_cached(tmp_path, monkeypatch):
     monkeypatch.setattr(scout, "graphql", lambda query, variables=None, **kw: welcome)
     assert scout.fetch_policies(["o/r"])["o/r"].verdict == "welcome"
     assert scout._load_cache()["o/r"]["verdict"] == "welcome"
+
+
+# --- gh CLI wrapper ----------------------------------------------------------
+
+def _fake_run(returncode, stdout, stderr=""):
+    import subprocess
+
+    def run(cmd, **kw):
+        return subprocess.CompletedProcess(cmd, returncode, stdout, stderr)
+    return run
+
+
+def test_graphql_returns_data(monkeypatch):
+    from issue_scout import scout
+
+    monkeypatch.setattr(scout.subprocess, "run", _fake_run(0, '{"data": {"viewer": {"login": "me"}}}'))
+    assert scout.graphql("{ viewer { login } }") == {"viewer": {"login": "me"}}
+
+
+def test_graphql_garbled_output_raises_gh_error(monkeypatch):
+    import pytest
+
+    from issue_scout import scout
+
+    monkeypatch.setattr(scout.subprocess, "run", _fake_run(1, '{"data": {"repo', "connection reset"))
+    with pytest.raises(scout.GhError, match="connection reset"):
+        scout.graphql("{ viewer { login } }", retries=0)
