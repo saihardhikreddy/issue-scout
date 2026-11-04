@@ -265,11 +265,13 @@ def fetch_policies(repos: list[str], *, batch: int = 10, use_cache: bool = True)
             data = graphql("{ " + " ".join(parts) + " }")
         except GhError as exc:
             log(f"  could not read policies for {', '.join(chunk)}: {exc}")
-            data = {}
+            data = None
         for i, repo in enumerate(chunk):
-            repo_data = data.get(f"r{i}")
+            repo_data = (data or {}).get(f"r{i}")
             policy = policy_from_repo_data(repo, repo_data) if repo_data else Policy("none")
             result[repo] = policy
+            if data is None:
+                continue  # a failed request says nothing about the policy; retry next run
             cache[repo.lower()] = {"at": now, "verdict": policy.verdict,
                                    "source": policy.source, "evidence": policy.evidence}
     if use_cache:

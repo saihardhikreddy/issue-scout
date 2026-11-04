@@ -146,3 +146,23 @@ def test_policy_and_stars_raise_score():
     for issue in (plain, popular, strict):
         score_issue(issue)
     assert popular.score > plain.score > strict.score
+
+
+# --- policy cache ------------------------------------------------------------
+
+def test_failed_policy_lookup_is_not_cached(tmp_path, monkeypatch):
+    from issue_scout import scout
+
+    monkeypatch.setattr(scout, "CACHE_DIR", tmp_path)
+
+    def failing(query, variables=None, **kw):
+        raise scout.GhError("HTTP 502")
+
+    monkeypatch.setattr(scout, "graphql", failing)
+    assert scout.fetch_policies(["o/r"])["o/r"].verdict == "none"
+    assert "o/r" not in scout._load_cache()
+
+    welcome = {"r0": {"isArchived": False, "f0": {"text": "AI-assisted contributions are welcome."}}}
+    monkeypatch.setattr(scout, "graphql", lambda query, variables=None, **kw: welcome)
+    assert scout.fetch_policies(["o/r"])["o/r"].verdict == "welcome"
+    assert scout._load_cache()["o/r"]["verdict"] == "welcome"
