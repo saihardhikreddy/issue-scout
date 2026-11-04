@@ -52,6 +52,9 @@ POLICY_RULES = [
     ("mentions-ai", r"\bAI\b|\bLLMs?\b|generative|Copilot|ChatGPT"),
 ]
 
+# Compiled once at import instead of on every classify_policy call.
+_POLICY_REGEXES = [(verdict, re.compile(pattern, re.I)) for verdict, pattern in POLICY_RULES]
+
 POLICY_NOTES = {
     "closed": "not taking outside PRs",
     "banned": "AI contributions banned",
@@ -159,8 +162,7 @@ class Policy:
 
 def classify_policy(files: dict[str, str]) -> Policy:
     """Pick the strongest verdict found across the policy files."""
-    for verdict, pattern in POLICY_RULES:
-        rx = re.compile(pattern, re.I)
+    for verdict, rx in _POLICY_REGEXES:
         for path, text in files.items():
             for line in text.splitlines():
                 if rx.search(line):
