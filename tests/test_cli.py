@@ -50,3 +50,18 @@ def test_parser_accepts_repos_and_repeatable_languages():
     a = build_parser().parse_args(["owner/repo", "-l", "python", "-l", "rust"])
     assert a.repos == ["owner/repo"]
     assert a.language == ["python", "rust"]
+
+
+def test_parser_rejects_out_of_range_numbers(capsys):
+    import pytest
+
+    # GitHub's GraphQL API caps `first` at 100, so a bigger --fetch failed for every repo.
+    with pytest.raises(SystemExit):
+        build_parser().parse_args(["o/r", "--fetch", "150"])
+    assert "between 1 and 100" in capsys.readouterr().err
+    for argv in (["o/r", "--fetch", "0"], ["--top", "0"],
+                 ["--per-repo", "-1"], ["--max-comments", "x"]):
+        with pytest.raises(SystemExit):
+            build_parser().parse_args(argv)
+    a = build_parser().parse_args(["o/r", "--fetch", "100", "--top", "3", "--per-repo", "0"])
+    assert (a.fetch, a.top, a.per_repo) == (100, 3, 0)

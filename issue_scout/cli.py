@@ -54,6 +54,20 @@ def wants_color(args: argparse.Namespace) -> bool:
     return args.color == "always" or sys.stdout.isatty()
 
 
+def int_range(low: int, high: int | None = None):
+    """An argparse type for an integer in [low, high]."""
+    def parse(text: str) -> int:
+        try:
+            value = int(text)
+        except ValueError:
+            raise argparse.ArgumentTypeError(f"{text!r} is not a whole number") from None
+        if value < low or (high is not None and value > high):
+            bound = f"between {low} and {high}" if high is not None else f"at least {low}"
+            raise argparse.ArgumentTypeError(f"must be {bound}, got {value}")
+        return value
+    return parse
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="issue-scout",
@@ -73,19 +87,20 @@ def build_parser() -> argparse.ArgumentParser:
                    help=f"issue label to search for (repeatable; default: {', '.join(DEFAULT_LABELS)}; "
                         "'any' for no label filter)")
     g.add_argument("--min-stars", type=int, default=500, help="skip smaller projects (default 500)")
-    g.add_argument("--repo-limit", type=int, default=60, help="active repositories to scan (default 60)")
-    g.add_argument("--search-limit", type=int, default=300, help="issues to pull from issue search (default 300)")
+    g.add_argument("--repo-limit", type=int_range(1), default=60, help="active repositories to scan (default 60)")
+    g.add_argument("--search-limit", type=int_range(1), default=300, help="issues to pull from issue search (default 300)")
     g.add_argument("--strategy", choices=["both", "repos", "issues"], default="both",
                    help="repo-first, issue-first, or both (default both)")
     g.add_argument("--any-script", action="store_true",
                    help="keep issues whose titles are mostly in non-Latin scripts (skipped by default)")
-    g.add_argument("--per-repo", type=int, default=3, help="max results from one project (default 3, 0 = no cap)")
+    g.add_argument("--per-repo", type=int_range(0), default=3, help="max results from one project (default 3, 0 = no cap)")
     g.add_argument("--query", default="", help="extra GitHub search qualifiers, e.g. 'org:microsoft'")
 
     p.add_argument("--days", type=float, help="only issues newer than this (default 14 for search, 30 for repos)")
-    p.add_argument("--max-comments", type=int, default=2, help="skip busier issues (default 2)")
-    p.add_argument("--fetch", type=int, default=40, help="newest issues to look at per named repo (default 40)")
-    p.add_argument("--top", type=int, help="results to show (default 25 for search, 5 per repo)")
+    p.add_argument("--max-comments", type=int_range(0), default=2, help="skip busier issues (default 2)")
+    p.add_argument("--fetch", type=int_range(1, 100), default=40,
+                   help="newest issues to look at per named repo, 1-100 (default 40)")
+    p.add_argument("--top", type=int_range(1), help="results to show (default 25 for search, 5 per repo)")
     p.add_argument("--include-claimed", action="store_true", help="also show issues with open PRs")
     p.add_argument("--all-policies", action="store_true",
                    help="also show projects that ban AI or take no outside PRs")
