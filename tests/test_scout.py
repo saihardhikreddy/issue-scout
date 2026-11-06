@@ -193,3 +193,15 @@ def test_graphql_garbled_output_raises_gh_error(monkeypatch):
     monkeypatch.setattr(scout.subprocess, "run", _fake_run(1, '{"data": {"repo', "connection reset"))
     with pytest.raises(scout.GhError, match="connection reset"):
         scout.graphql("{ viewer { login } }", retries=0)
+
+
+def test_negated_labels_do_not_count():
+    plain = parse_issue("o/r", node())
+    unconfirmed = parse_issue("o/r", node(labels=["status: unconfirmed"]))
+    unblocked = parse_issue("o/r", node(labels=["unblocked"]))
+    confirmed = parse_issue("o/r", node(labels=["confirmed"]))
+    for issue in (plain, unconfirmed, unblocked, confirmed):
+        score_issue(issue)
+    assert unconfirmed.score == plain.score
+    assert unblocked.score == plain.score
+    assert confirmed.score > plain.score

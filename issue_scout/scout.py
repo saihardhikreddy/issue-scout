@@ -72,12 +72,13 @@ POLICY_WEIGHT = {
 }
 EXCLUDED_POLICIES = {"banned", "closed"}
 
+# Each alternative must start a word, so "unconfirmed" or "unblocked" don't count as "confirmed" or "blocked".
 SKIP_LABELS = re.compile(
-    r"needs[- ]decision|needs[- ]design|proposal|rfc|question|discussion|wontfix|invalid|duplicate|"
-    r"tracking|upstream|blocked|deferred|stale",
+    r"\b(?:needs[- ]decision|needs[- ]design|proposal|rfc|question|discussion|wontfix|invalid|duplicate|"
+    r"tracking|upstream|blocked|deferred|stale)",
     re.I,
 )
-GOOD_LABELS = re.compile(r"good[- ]first|easy|help[- ]wanted|beginner|confirmed|low[- ]hanging", re.I)
+GOOD_LABELS = re.compile(r"\b(?:good[- ]first|easy|help[- ]wanted|beginner|confirmed|low[- ]hanging)", re.I)
 BUG_LABELS = re.compile(r"\bbug\b|type: ?bug|regression", re.I)
 FEATURE_LABELS = re.compile(r"enhancement|feature|feat\b", re.I)
 DISCUSSION_TITLES = re.compile(r"feedback|\brfc\b|proposal|discussion|roadmap|tracking issue|^\[?feat", re.I)
