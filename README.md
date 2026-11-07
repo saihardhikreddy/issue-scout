@@ -101,8 +101,10 @@ issue-scout -l go --json                     # machine-readable output
 | `--repo-limit` | 60 | Active repositories to read in the repo-first search |
 | `--search-limit` | 300 | Issues to pull from the issue-first search |
 | `--strategy` | both | `repos`, `issues` or `both` |
+| `--query` | none | Extra GitHub search qualifiers, e.g. `org:microsoft` |
 | `--per-repo` | 3 | Most results from one project (0 for no cap) |
 | `--top` | 25 (search), 5 per repo | Results shown |
+| `--fetch` | 40 | Newest issues to read from each named repo (1-100) |
 | `--include-claimed` | off | Also show issues that have open PRs |
 | `--all-policies` | off | Also show issues from `BANNED` and `CLOSED` projects |
 | `--any-script` | off | Keep issues whose titles are mostly in non-Latin scripts |
@@ -110,6 +112,7 @@ issue-scout -l go --json                     # machine-readable output
 | `--policy-only` | off | Only report each named project's AI policy |
 | `--json` | off | Machine-readable output |
 | `--color` | auto | `auto`, `always` or `never` |
+| `--no-color` | off | Same as `--color never` |
 
 </details>
 

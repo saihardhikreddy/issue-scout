@@ -65,3 +65,12 @@ def test_parser_rejects_out_of_range_numbers(capsys):
             build_parser().parse_args(argv)
     a = build_parser().parse_args(["o/r", "--fetch", "100", "--top", "3", "--per-repo", "0"])
     assert (a.fetch, a.top, a.per_repo) == (100, 3, 0)
+
+
+def test_readme_documents_every_option():
+    from pathlib import Path
+
+    readme = (Path(__file__).resolve().parent.parent / "README.md").read_text(encoding="utf-8")
+    options = {opt for action in build_parser()._actions for opt in action.option_strings if opt.startswith("--")}
+    missing = sorted(opt for opt in options - {"--help"} if f"`{opt}`" not in readme)
+    assert not missing, f"options missing from the README table: {missing}"
