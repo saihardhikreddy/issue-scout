@@ -164,8 +164,22 @@ def scan_repos_batched(repos: list[str], opts: DiscoverOptions, batch: int = 5) 
     return [issue for chunk_issues in results for issue in chunk_issues]
 
 
+TOPIC_FIELDS = "repositoryTopics(first: 50) { nodes { topic { name } } }"
+
+
+def has_topics(repo: dict, topics: list[str]) -> bool:
+    """True when the repository carries every requested topic (as repo search's topic: does)."""
+    if not topics:
+        return True
+    nodes = (repo.get("repositoryTopics") or {}).get("nodes") or []
+    names = {n["topic"]["name"].lower() for n in nodes if n and n.get("topic")}
+    return all(t.lower() in names for t in topics)
+
+
 def search_issues(opts: DiscoverOptions) -> list[Issue]:
-    node_fields = f"... on Issue {{ {ISSUE_FIELDS} repository {{ {REPO_FIELDS} }} }}"
+    # Issue search has no topic: qualifier, so read the topics and filter here instead.
+    repo_fields = REPO_FIELDS + (f" {TOPIC_FIELDS}" if opts.topics else "")
+    node_fields = f"... on Issue {{ {ISSUE_FIELDS} repository {{ {repo_fields} }} }}"
     queries = build_issue_queries(opts)
     per_query = max(1, opts.issue_search_limit // len(queries))
     issues: list[Issue] = []
@@ -174,6 +188,8 @@ def search_issues(opts: DiscoverOptions) -> list[Issue]:
         for node in _paged_search(query, "ISSUE", per_query, node_fields):
             repo = node["repository"]
             if repo["stargazerCount"] < opts.min_stars or repo["isArchived"] or repo["isFork"]:
+                continue
+            if not has_topics(repo, opts.topics):
                 continue
             issue = parse_issue(repo["nameWithOwner"], node)
             issue.stars = repo["stargazerCount"]

@@ -43,3 +43,38 @@ def test_mostly_latin():
     assert mostly_latin("Café crashes on résumé upload")
     assert not mostly_latin("Claude Desktop无法使用gemini模型")
     assert mostly_latin("1234 !!")
+
+
+def _issue_node(url, topics):
+    return {
+        "url": url, "number": 1, "title": "Fix the thing", "createdAt": "2026-01-01T00:00:00Z",
+        "repository": {
+            "nameWithOwner": "o/r", "stargazerCount": 5000, "isArchived": False, "isFork": False,
+            "primaryLanguage": {"name": "Python"},
+            "repositoryTopics": {"nodes": [{"topic": {"name": t}} for t in topics]},
+        },
+    }
+
+
+def test_issue_search_respects_topics(monkeypatch):
+    from issue_scout import discover
+
+    seen = {}
+
+    def fake_search(query, kind, limit, node_fields):
+        seen["fields"] = node_fields
+        return [_issue_node("https://x/1", ["cli", "python"]), _issue_node("https://x/2", ["web"])]
+
+    monkeypatch.setattr(discover, "_paged_search", fake_search)
+    monkeypatch.setattr(discover, "parse_issue", lambda repo, node: Issue(
+        repo=repo, number=1, title="t", url=node["url"], created=None, comments=0, assigned=False, labels=[]))
+    issues = discover.search_issues(DiscoverOptions(topics=["CLI"], labels=[]))
+    assert [i.url for i in issues] == ["https://x/1"]
+    assert "repositoryTopics" in seen["fields"]
+
+
+def test_has_topics_without_filter():
+    from issue_scout.discover import has_topics
+
+    assert has_topics({}, [])
+    assert not has_topics({}, ["cli"])
