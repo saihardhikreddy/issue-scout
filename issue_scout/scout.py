@@ -230,16 +230,32 @@ def policy_from_repo_data(repo: str, data: dict) -> Policy:
 
 
 def _load_cache() -> dict:
+    """The policy cache, keeping only entries this version can use.
+
+    An entry from an older version (a verdict that has since been renamed) or a hand-edited one
+    (no timestamp) used to crash the run with a KeyError; now it is simply looked up again.
+    """
     try:
-        return json.loads((CACHE_DIR / "policies.json").read_text(encoding="utf-8"))
+        cache = json.loads((CACHE_DIR / "policies.json").read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return {}
+    if not isinstance(cache, dict):
+        return {}
+    return {
+        repo: entry for repo, entry in cache.items()
+        if isinstance(entry, dict) and isinstance(entry.get("at"), (int, float))
+        and entry.get("verdict") in POLICY_WEIGHT
+    }
 
 
 def _save_cache(cache: dict) -> None:
+    """Write the cache through a temporary file, so a run killed mid-write can't truncate it."""
+    path = CACHE_DIR / "policies.json"
+    tmp = path.with_suffix(".json.tmp")
     try:
         CACHE_DIR.mkdir(parents=True, exist_ok=True)
-        (CACHE_DIR / "policies.json").write_text(json.dumps(cache), encoding="utf-8")
+        tmp.write_text(json.dumps(cache), encoding="utf-8")
+        os.replace(tmp, path)
     except OSError:
         pass
 

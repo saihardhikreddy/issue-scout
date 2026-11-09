@@ -168,6 +168,35 @@ def test_failed_policy_lookup_is_not_cached(tmp_path, monkeypatch):
     assert scout._load_cache()["o/r"]["verdict"] == "welcome"
 
 
+def test_stale_or_broken_cache_entries_are_refetched(tmp_path, monkeypatch):
+    import json
+    import time
+
+    from issue_scout import scout
+
+    monkeypatch.setattr(scout, "CACHE_DIR", tmp_path)
+    (tmp_path / "policies.json").write_text(json.dumps({
+        "o/old": {"at": time.time(), "verdict": "renamed-in-a-later-version"},
+        "o/hand": {"verdict": "welcome"},          # hand-edited, no timestamp
+        "o/ok": {"at": time.time(), "verdict": "welcome", "source": "AI.md", "evidence": "yes"},
+    }))
+    asked = []
+
+    def fake(query, variables=None, **kw):
+        asked.append(query)
+        return {"r0": {"isArchived": False}, "r1": {"isArchived": False}}
+
+    monkeypatch.setattr(scout, "graphql", fake)
+    got = scout.fetch_policies(["o/old", "o/hand", "o/ok"])  # used to raise KeyError
+    assert got["o/ok"].verdict == "welcome" and got["o/old"].verdict == "none"
+    assert len(asked) == 1 and '"o"' in asked[0] and '"old"' in asked[0] and '"ok"' not in asked[0]
+    assert set(scout._load_cache()) == {"o/old", "o/hand", "o/ok"}
+    assert not (tmp_path / "policies.json.tmp").exists()
+
+    (tmp_path / "policies.json").write_text("[]")  # valid JSON, wrong shape
+    assert scout._load_cache() == {}
+
+
 # --- gh CLI wrapper ----------------------------------------------------------
 
 def _fake_run(returncode, stdout, stderr=""):
