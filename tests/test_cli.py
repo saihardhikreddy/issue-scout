@@ -67,6 +67,24 @@ def test_parser_rejects_out_of_range_numbers(capsys):
     assert (a.fetch, a.top, a.per_repo) == (100, 3, 0)
 
 
+def test_days_must_be_positive_and_repos_need_an_owner(capsys):
+    import pytest
+
+    for argv in (["--days", "0"], ["--days", "-3"], ["--days", "nan"], ["--min-stars", "-1"]):
+        with pytest.raises(SystemExit):
+            build_parser().parse_args(argv)
+    assert "more than 0" in capsys.readouterr().err
+    assert build_parser().parse_args(["--days", "0.5"]).days == 0.5
+    with pytest.raises(SystemExit):
+        build_parser().parse_args(["pytest"])
+    assert "not owner/name" in capsys.readouterr().err
+    for bad in ("a/b/c", "/pytest", "pytest/"):
+        with pytest.raises(SystemExit):
+            build_parser().parse_args([bad])
+    a = build_parser().parse_args(["https://github.com/pytest-dev/pytest", "o/r/"])
+    assert a.repos == ["pytest-dev/pytest", "o/r"]
+
+
 def test_readme_documents_every_option():
     from pathlib import Path
 
