@@ -164,13 +164,59 @@ class Policy:
         return POLICY_WEIGHT[self.verdict]
 
 
+_BLOCK_START = re.compile(r"\s*(?:#|[-*+]\s|\d+[.)]\s|\.\. )")
+
+
+def policy_passages(text: str) -> list[str]:
+    """Split a policy file into passages, joining hard-wrapped lines.
+
+    CONTRIBUTING files are usually wrapped at about 80 columns, so a sentence such as
+    "We do not accept AI-generated\npull requests" spans two lines. A blank line, a
+    list item or a heading starts a new passage, and a heading stands alone.
+    """
+    passages: list[list[str]] = []
+    current: list[str] = []
+    for line in text.splitlines():
+        if not line.strip() or _BLOCK_START.match(line):
+            if current:
+                passages.append(current)
+            current = []
+        if line.strip():
+            current.append(line.strip())
+        if line.lstrip().startswith("#"):  # a heading is a passage of its own
+            passages.append(current)
+            current = []
+    if current:
+        passages.append(current)
+    return [_join_wrapped(lines) for lines in passages]
+
+
+def _join_wrapped(lines: list[str]) -> str:
+    out = lines[0]
+    for line in lines[1:]:
+        # A line ending in a hyphenated word ("AI-") continues without a space.
+        out += line if re.search(r"\w-$", out) else " " + line
+    return out
+
+
+def _evidence(passage: str, match: re.Match, width: int = 200) -> str:
+    """Up to `width` characters of the passage, centred on the match when it is long."""
+    if len(passage) <= width:
+        return passage
+    start = max(0, min(match.start() - width // 3, len(passage) - width))
+    snippet = passage[start:start + width].strip()
+    return ("..." if start else "") + snippet + ("..." if start + width < len(passage) else "")
+
+
 def classify_policy(files: dict[str, str]) -> Policy:
     """Pick the strongest verdict found across the policy files."""
+    split = {path: policy_passages(text) for path, text in files.items()}
     for verdict, rx in _POLICY_REGEXES:
-        for path, text in files.items():
-            for line in text.splitlines():
-                if rx.search(line):
-                    return Policy(verdict, path, line.strip()[:200])
+        for path, passages in split.items():
+            for passage in passages:
+                match = rx.search(passage)
+                if match:
+                    return Policy(verdict, path, _evidence(passage, match))
     return Policy("none")
 
 

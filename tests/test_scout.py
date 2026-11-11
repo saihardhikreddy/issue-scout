@@ -234,3 +234,38 @@ def test_negated_labels_do_not_count():
     assert unconfirmed.score == plain.score
     assert unblocked.score == plain.score
     assert confirmed.score > plain.score
+
+
+# --- wrapped policy text -----------------------------------------------------
+
+def test_policy_sentence_wrapped_across_lines():
+    text = ("## Pull requests\n\n"
+            "Thanks for your interest. Please note that we do not accept AI-\n"
+            "generated pull requests, and they will be closed.\n")
+    policy = classify_policy({"CONTRIBUTING.md": text})
+    assert policy.verdict == "banned"
+    assert "do not accept AI-generated pull requests" in policy.evidence
+
+
+def test_policy_wrapped_closed_notice():
+    text = "Right now the project is not accepting outside\ncontributions while we rewrite the core."
+    assert classify_policy({"CONTRIBUTING.md": text}).verdict == "closed"
+
+
+def test_policy_passages_split_on_blank_lines_headings_and_list_items():
+    from issue_scout.scout import policy_passages
+
+    text = "# Title\nIntro line one\nline two\n\n- first item\n  continued\n- second item\n1. numbered"
+    assert policy_passages(text) == [
+        "# Title", "Intro line one line two", "- first item continued", "- second item", "1. numbered",
+    ]
+
+
+def test_policy_evidence_is_centred_on_the_match():
+    filler = "Lorem ipsum dolor sit amet. " * 20
+    text = filler + "We do not accept AI-generated code. " + filler
+    policy = classify_policy({"CONTRIBUTING.md": text})
+    assert policy.verdict == "banned"
+    assert "do not accept AI-generated" in policy.evidence
+    assert policy.evidence.startswith("...") and policy.evidence.endswith("...")
+    assert len(policy.evidence) <= 206
