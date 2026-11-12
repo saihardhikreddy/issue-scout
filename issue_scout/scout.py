@@ -374,6 +374,13 @@ class Issue:
         return self.assigned or bool(self.open_prs)
 
 
+def _pr_in_repo(url: str, repo: str) -> bool:
+    """True when the PR URL belongs to `repo` (owner/name, compared case-insensitively).
+    PRs opened from forks still target the upstream repository, so they count."""
+    path = url.split("://", 1)[-1].partition("/")[2].lower()
+    return path.startswith(repo.lower().rstrip("/") + "/pull/")
+
+
 def parse_issue(repo: str, node: dict) -> Issue:
     issue = Issue(
         repo=repo,
@@ -391,6 +398,11 @@ def parse_issue(repo: str, node: dict) -> Issue:
         if "number" not in pr or pr["url"] in seen:
             continue
         seen.add(pr["url"])
+        if not _pr_in_repo(pr["url"], repo):
+            # A PR in another project that mentions this issue (a downstream workaround, a
+            # "see also") is not someone fixing it here, so it neither claims the issue nor
+            # counts as an earlier attempt that was closed.
+            continue
         if pr["state"] == "CLOSED":
             issue.closed_prs.append(pr["url"])
         else:  # OPEN, or MERGED (the fix may already be in): someone is on it

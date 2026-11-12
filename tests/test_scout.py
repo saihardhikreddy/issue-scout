@@ -97,6 +97,22 @@ def test_merged_pr_counts_as_claimed():
     assert parse_issue("o/r", node(timeline=[pr(5, "MERGED")])).claimed
 
 
+def test_prs_in_other_projects_do_not_claim_the_issue():
+    other = {"source": {"number": 9, "state": "OPEN", "url": "https://github.com/someone/downstream/pull/9"}}
+    closed = {"source": {"number": 3, "state": "CLOSED", "url": "https://github.com/x/y/pull/3"}}
+    issue = parse_issue("o/r", node(timeline=[other, closed]))
+    assert not issue.claimed
+    assert issue.open_prs == [] and issue.closed_prs == []
+
+
+def test_pr_repo_match_ignores_case_and_prefixes():
+    mixed = {"source": {"number": 5, "state": "OPEN", "url": "https://github.com/O/R/pull/5"}}
+    assert parse_issue("o/r", node(timeline=[mixed])).claimed
+    # "o/r" must not match "o/rust".
+    longer = {"source": {"number": 5, "state": "OPEN", "url": "https://github.com/o/rust/pull/5"}}
+    assert not parse_issue("o/r", node(timeline=[longer])).claimed
+
+
 def test_only_closed_prs_is_unclaimed():
     issue = parse_issue("o/r", node(timeline=[pr(7, "CLOSED"), pr(7, "CLOSED")]))
     assert not issue.claimed
