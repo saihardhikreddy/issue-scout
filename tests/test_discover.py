@@ -78,3 +78,31 @@ def test_has_topics_without_filter():
 
     assert has_topics({}, [])
     assert not has_topics({}, ["cli"])
+
+
+def _labelled(url, labels):
+    from datetime import datetime, timezone
+    return Issue("o/r", 1, "Fix the thing", url, datetime.now(timezone.utc), 0, False, labels)
+
+
+def _discover_with(monkeypatch, opts):
+    from issue_scout import discover
+    from issue_scout.scout import Policy
+
+    repo_first = [_labelled("https://x/1", ["Good First Issue"]), _labelled("https://x/2", []),
+                  _labelled("https://x/3", ["enhancement"])]
+    monkeypatch.setattr(discover, "search_repos", lambda o: ["o/r"])
+    monkeypatch.setattr(discover, "scan_repos_batched", lambda repos, o: repo_first)
+    monkeypatch.setattr(discover, "search_issues", lambda o: [])
+    monkeypatch.setattr(discover, "fetch_policies", lambda repos: {r: Policy("none") for r in repos})
+    return sorted(i.url for i in discover.discover(opts))
+
+
+def test_explicit_labels_also_filter_repo_first_results(monkeypatch):
+    opts = DiscoverOptions(labels=["good first issue"], require_labels=True, per_repo=0)
+    assert _discover_with(monkeypatch, opts) == ["https://x/1"]
+
+
+def test_default_labels_keep_repo_first_results(monkeypatch):
+    assert len(_discover_with(monkeypatch, DiscoverOptions(per_repo=0))) == 3
+    assert len(_discover_with(monkeypatch, DiscoverOptions(labels=[], require_labels=True, per_repo=0))) == 3

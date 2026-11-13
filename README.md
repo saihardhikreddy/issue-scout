@@ -94,7 +94,7 @@ issue-scout -l go --json                     # machine-readable output
 | --- | --- | --- |
 | `-l`, `--language` | all | Repository language (repeatable) |
 | `--topic` | none | Repository topic (repeatable) |
-| `--label` | good first issue, help wanted, bug | Issue labels to search (repeatable, `any` for none) |
+| `--label` | good first issue, help wanted, bug | Issue labels to search (repeatable, `any` for none). Given explicitly, every result carries one of them; by default the repo-first search also returns a project's unlabelled new issues |
 | `--min-stars` | 500 | Skip smaller projects |
 | `--days` | 14 (search), 30 (named repos) | Only issues newer than this |
 | `--max-comments` | 2 | Skip issues that already have more discussion |

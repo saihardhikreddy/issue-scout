@@ -43,6 +43,10 @@ class DiscoverOptions:
     languages: list[str] = field(default_factory=list)
     topics: list[str] = field(default_factory=list)
     labels: list[str] = field(default_factory=lambda: list(DEFAULT_LABELS))
+    # Repo-first reads each project's newest issues whatever their labels, which suits the
+    # default list. When the user names labels themselves, they mean "only these", so the
+    # repo-first results are held to them too.
+    require_labels: bool = False
     min_stars: int = 500
     max_age_days: float = 14
     max_comments: int = 2
@@ -208,6 +212,10 @@ def discover(opts: DiscoverOptions) -> list[Issue]:
     if "issues" in opts.strategies:
         for issue in search_issues(opts):
             found.setdefault(issue.url, issue)
+
+    if opts.require_labels and opts.labels:
+        wanted = {label.lower() for label in opts.labels}
+        found = {url: i for url, i in found.items() if any(lb.lower() in wanted for lb in i.labels)}
 
     candidates = [
         i for i in found.values()

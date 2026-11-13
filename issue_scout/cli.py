@@ -231,6 +231,7 @@ def main(argv: list[str] | None = None) -> int:
             labels = []
         opts = DiscoverOptions(
             languages=args.language, topics=args.topic, labels=labels,
+            require_labels=args.label is not None,
             min_stars=args.min_stars, max_age_days=args.days or 14,
             max_comments=args.max_comments, repo_limit=args.repo_limit,
             issue_search_limit=args.search_limit, include_claimed=args.include_claimed,
