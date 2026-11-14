@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import shutil
 import sys
 from concurrent.futures import ThreadPoolExecutor
@@ -79,10 +80,24 @@ def positive_days(text: str) -> float:
     return value
 
 
+GITHUB_PREFIX = re.compile(r"^(?:(?:https?://)?(?:www\.)?github\.com/|git@github\.com:)", re.IGNORECASE)
+
+
 def repo_name(text: str) -> str:
     """owner/name, as the API needs. A bare name ("pytest") was sent with an empty owner and came
-    back as "repository not found", which hid the real mistake."""
-    owner, slash, name = text.strip().strip("/").removeprefix("https://github.com/").partition("/")
+    back as "repository not found", which hid the real mistake.
+
+    A pasted GitHub link also works: https://, http://, a bare github.com/ prefix, the SSH form,
+    a trailing .git, and a deeper page such as .../issues/12 all reduce to owner/name. A clone
+    URL used to pass through as "owner/name.git", which the API reports as not found."""
+    cleaned = text.strip()
+    url = GITHUB_PREFIX.match(cleaned)
+    if url:
+        cleaned = cleaned[url.end():].split("?")[0].split("#")[0]
+        cleaned = "/".join(cleaned.strip("/").split("/")[:2])
+    cleaned = cleaned.strip("/")
+    owner, slash, name = cleaned.partition("/")
+    name = name.removesuffix(".git")
     if not slash or not owner or not name or "/" in name:
         raise argparse.ArgumentTypeError(f"{text!r} is not owner/name, e.g. pytest-dev/pytest")
     return f"{owner}/{name}"

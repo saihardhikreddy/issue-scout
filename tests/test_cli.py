@@ -85,6 +85,21 @@ def test_days_must_be_positive_and_repos_need_an_owner(capsys):
     assert a.repos == ["pytest-dev/pytest", "o/r"]
 
 
+def test_repo_names_accept_pasted_github_links(capsys):
+    import pytest
+
+    from issue_scout.cli import repo_name
+
+    for text in ("https://github.com/pytest-dev/pytest.git", "http://github.com/pytest-dev/pytest",
+                 "github.com/pytest-dev/pytest", "https://www.github.com/pytest-dev/pytest/",
+                 "git@github.com:pytest-dev/pytest.git", "https://github.com/pytest-dev/pytest/issues/12",
+                 "https://github.com/pytest-dev/pytest?tab=readme", "pytest-dev/pytest.git"):
+        assert repo_name(text) == "pytest-dev/pytest", text
+    for bad in ("https://github.com/pytest-dev", "https://gitlab.com/a/b", "a/.git"):
+        with pytest.raises(argparse.ArgumentTypeError):
+            repo_name(bad)
+
+
 def test_readme_documents_every_option():
     from pathlib import Path
 

@@ -82,7 +82,7 @@ issue-scout --topic cli --min-stars 2000     # by topic, bigger projects only
 issue-scout --label "good first issue"       # only this label
 issue-scout --label any --days 3             # any label, last 3 days
 issue-scout --query "org:microsoft"          # any extra GitHub search qualifiers
-issue-scout owner/repo other/repo            # just these projects
+issue-scout owner/repo other/repo            # just these projects (a pasted GitHub link works too)
 issue-scout --preset python --policy-only    # AI policies of popular Python projects
 issue-scout -l go --json                     # machine-readable output
 ```
