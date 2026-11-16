@@ -106,3 +106,27 @@ def test_explicit_labels_also_filter_repo_first_results(monkeypatch):
 def test_default_labels_keep_repo_first_results(monkeypatch):
     assert len(_discover_with(monkeypatch, DiscoverOptions(per_repo=0))) == 3
     assert len(_discover_with(monkeypatch, DiscoverOptions(labels=[], require_labels=True, per_repo=0))) == 3
+
+
+def test_repo_search_fills_the_limit_despite_overlap(monkeypatch):
+    from issue_scout import discover
+
+    # Both searches return the same five projects first, then their own.
+    shared = [f"o/shared{i}" for i in range(5)]
+    hits = {"good-first-issues": shared + [f"o/gfi{i}" for i in range(10)],
+            "help-wanted-issues": shared + [f"o/hw{i}" for i in range(10)]}
+    asked = []
+
+    def fake_search(query, kind, limit, node_fields):
+        asked.append(limit)
+        key = "good-first-issues" if "good-first-issues" in query else "help-wanted-issues"
+        return [{"nameWithOwner": n} for n in hits[key][:limit]]
+
+    monkeypatch.setattr(discover, "_paged_search", fake_search)
+    repos = discover.search_repos(DiscoverOptions(repo_limit=10))
+    assert len(repos) == 10 == len(set(repos))       # used to stop at 5 (half the limit, all shared)
+    assert asked == [10, 10]
+    assert repos[:5] == shared
+    assert {"o/gfi0", "o/hw0"} <= set(repos)          # both searches contribute
+    assert discover.search_repos(DiscoverOptions(repo_limit=40)) == list(dict.fromkeys(
+        r for pair in zip(hits["good-first-issues"], hits["help-wanted-issues"]) for r in pair))

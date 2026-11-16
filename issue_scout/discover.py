@@ -117,12 +117,21 @@ def _paged_search(query: str, kind: str, limit: int, node_fields: str) -> list[d
 
 
 def search_repos(opts: DiscoverOptions) -> list[str]:
-    repos: dict[str, None] = {}
-    per_query = max(1, opts.repo_limit // 2)
+    """Up to repo_limit repositories, taken from the two searches in turn.
+
+    Each search used to be asked for only half the limit, so projects found by both searches, or
+    a search with few hits, left --repo-limit 60 scanning fewer than 60 repositories. Each now asks for the full limit; the merge stops at the limit.
+    """
+    results = []
     for query in build_repo_queries(opts):
         log(f"searching repos: {query}")
-        for node in _paged_search(query, "REPOSITORY", per_query, "... on Repository { nameWithOwner }"):
-            repos[node["nameWithOwner"]] = None
+        nodes = _paged_search(query, "REPOSITORY", opts.repo_limit, "... on Repository { nameWithOwner }")
+        results.append([n["nameWithOwner"] for n in nodes])
+    repos: dict[str, None] = {}
+    for i in range(max(map(len, results), default=0)):   # alternate, so both kinds stay represented
+        for names in results:
+            if i < len(names):
+                repos[names[i]] = None
     return list(repos)[: opts.repo_limit]
 
 
