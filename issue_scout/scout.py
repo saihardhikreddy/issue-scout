@@ -40,8 +40,10 @@ POLICY_RULES = [
     (
         "banned",
         r"(strictly )?forbids? the (usage|use) of (LLMs|AI)|no AI ?/ ?no LLM|"
-        r"(do not|don't|cannot) accept (any )?(AI|LLM)[- ]generated|AI[- ]generated .{0,40}not (be )?accepted|"
-        r"(do not|don't|cannot) accept (any )?(contributions|pull requests|PRs|code|patches) "
+        # "accept" from the maintainer's side; "submit", "open", "send" from the contributor's
+        # ("Please do not submit AI-generated pull requests").
+        r"(do not|don't|cannot|never) (accept|submit|open|send) (any )?(AI|LLM)[- ]generated|AI[- ]generated .{0,40}not (be )?accepted|"
+        r"(do not|don't|cannot|never) (accept|submit|open|send) (any )?(contributions|pull requests|PRs|code|patches) "
         r"(generated|written|made|created) (by|with|using) (an? )?(AI|LLMs?)\b",
     ),
     (
@@ -52,7 +54,10 @@ POLICY_RULES = [
         "welcome",
         r"welcome[sd]? (the )?(thoughtful |responsible )?(use of )?(AI|LLM)|"
         r"(AI|LLM)[- ]assisted contributions are welcome|accepts? AI[- ]generated|"
-        r"may use AI tools|AI tools .{0,60}(is|are) welcome|welcome the use of AI|welcomes? contributions .{0,80}(AI|Artificial Intelligence)",
+        r"may use AI tools|AI tools .{0,60}(is|are) welcome|welcome the use of AI|welcomes? contributions"
+        # Same sentence, and no "not"/"no" in between: "We welcome contributions of all kinds.
+        # Please do not submit AI-generated PRs" is a ban, not a welcome.
+        r"(?:(?!\b(?:not|no|never|don't|without)\b)[^.\n]){0,80}\b(AI|Artificial Intelligence)\b",
     ),
     (
         "strict",

@@ -125,9 +125,9 @@ yt-dlp/yt-dlp</textarea>
 const POLICY_FILES = ["AI_POLICY.md", ".github/AI_POLICY.md", "CONTRIBUTING.md", ".github/CONTRIBUTING.md", "CONTRIBUTING.rst", "docs/CONTRIBUTING.md"];
 const POLICY_RULES = [
   ["closed", /paused accepting pull requests|not accepting (outside |external )?(pull requests|contributions)(?! (that|which|for))/i],
-  ["banned", /(strictly )?forbids? the (usage|use) of (LLMs|AI)|no AI ?\/ ?no LLM|(do not|don't|cannot) accept (any )?(AI|LLM)[- ]generated|AI[- ]generated .{0,40}not (be )?accepted/i],
+  ["banned", /(strictly )?forbids? the (usage|use) of (LLMs|AI)|no AI ?\/ ?no LLM|(do not|don't|cannot|never) (accept|submit|open|send) (any )?(AI|LLM)[- ]generated|AI[- ]generated .{0,40}not (be )?accepted|(do not|don't|cannot|never) (accept|submit|open|send) (any )?(contributions|pull requests|PRs|code|patches) (generated|written|made|created) (by|with|using) (an? )?(AI|LLMs?)\b/i],
   ["approval-first", /approved by a maintainer|must link to an? (issue|discussion) where/i],
-  ["welcome", /welcome[sd]? (the )?(thoughtful |responsible )?(use of )?(AI|LLM)|(AI|LLM)[- ]assisted contributions are welcome|accepts? AI[- ]generated|may use AI tools|AI tools .{0,60}(is|are) welcome|welcome the use of AI|welcomes? contributions .{0,80}(AI|Artificial Intelligence)/i],
+  ["welcome", /welcome[sd]? (the )?(thoughtful |responsible )?(use of )?(AI|LLM)|(AI|LLM)[- ]assisted contributions are welcome|accepts? AI[- ]generated|may use AI tools|AI tools .{0,60}(is|are) welcome|welcome the use of AI|welcomes? contributions(?:(?!\b(?:not|no|never|don't|without)\b)[^.\n]){0,80}\b(AI|Artificial Intelligence)\b/i],
   ["strict", /unsupervised agentic|will be (permanently )?banned|discourage use of LLMs|closed without (further )?(review|discussion)/i],
   ["mentions-ai", /\bAI\b|\bLLMs?\b|generative|Copilot|ChatGPT/],
 ];
