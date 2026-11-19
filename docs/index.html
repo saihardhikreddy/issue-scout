@@ -141,7 +141,7 @@ const SKIP = /needs[- ]decision|needs[- ]design|proposal|rfc|question|discussion
 const GOOD = /good[- ]first|easy|help[- ]wanted|beginner|confirmed|low[- ]hanging/i;
 const BUG = /\bbug\b|type: ?bug|regression/i;
 const FEATURE = /enhancement|feature|feat\b/i;
-const TALK = /feedback|\brfc\b|proposal|discussion|roadmap|tracking issue|^\[?feat/i;
+const TALK = /\bfeedback\s*(?:[:\]?]|$|wanted|welcome|needed|requested)|\byour feedback\b|(?:request(?:ing)? for|seeking|looking for|asking for) feedback|\brfc\b|proposal|discussion|roadmap|tracking issue|^\[?feat(?:ure)?\b/i;
 
 const $ = (id) => document.getElementById(id);
 let mode = "search";

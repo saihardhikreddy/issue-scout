@@ -185,6 +185,15 @@ def test_discussion_titles_rank_lower():
     assert bug.score > talk.score
 
 
+def test_bug_titles_that_start_like_discussion_words_are_not_discussions():
+    from issue_scout.scout import DISCUSSION_TITLES
+    for title in ("Featured image disappears on save", "Features page returns 404", "Feedback form crashes"):
+        assert not DISCUSSION_TITLES.search(title), title
+    for title in ("Feature request: dark mode", "[feat] add x", "Feedback wanted: new CLI",
+                  "Looking for feedback on plugins", "RFC: config format"):
+        assert DISCUSSION_TITLES.search(title), title
+
+
 def test_policy_and_stars_raise_score():
     from issue_scout.scout import Policy
 

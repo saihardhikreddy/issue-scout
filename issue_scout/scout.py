@@ -96,7 +96,12 @@ SKIP_LABELS = re.compile(
 GOOD_LABELS = re.compile(r"\b(?:good[- ]first|easy|help[- ]wanted|beginner|confirmed|low[- ]hanging)", re.I)
 BUG_LABELS = re.compile(r"\bbug\b|type: ?bug|regression", re.I)
 FEATURE_LABELS = re.compile(r"enhancement|feature|feat\b", re.I)
-DISCUSSION_TITLES = re.compile(r"feedback|\brfc\b|proposal|discussion|roadmap|tracking issue|^\[?feat", re.I)
+# "feat"/"feature" only as a whole word and "feedback" only when it is asked for: "Featured
+# image disappears", "Features page 404s" and "Feedback form crashes" are bug reports.
+DISCUSSION_TITLES = re.compile(
+    r"\bfeedback\s*(?:[:\]?]|$|wanted|welcome|needed|requested)|\byour feedback\b|"
+    r"(?:request(?:ing)? for|seeking|looking for|asking for) feedback|"
+    r"\brfc\b|proposal|discussion|roadmap|tracking issue|^\[?feat(?:ure)?\b", re.I)
 
 # Fields fetched for every issue, wherever it comes from (a repo listing or a search).
 ISSUE_FIELDS = """
