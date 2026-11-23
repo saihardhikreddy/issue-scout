@@ -103,6 +103,15 @@ def repo_name(text: str) -> str:
     return f"{owner}/{name}"
 
 
+def unique_repos(repos: list[str]) -> list[str]:
+    """Drop repeats, keeping the first spelling. GitHub names ignore case, so "Textualize/Rich"
+    and the preset's "Textualize/rich" are one repository; they used to be scanned and listed twice."""
+    seen: dict[str, str] = {}
+    for repo in repos:
+        seen.setdefault(repo.lower(), repo)
+    return list(seen.values())
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="issue-scout",
@@ -238,7 +247,7 @@ def main(argv: list[str] | None = None) -> int:
     repos = list(args.repos)
     for preset in args.preset or []:
         repos += PRESETS[preset]
-    repos = list(dict.fromkeys(repos))
+    repos = unique_repos(repos)
 
     if not repos:
         labels = args.label if args.label is not None else list(DEFAULT_LABELS)

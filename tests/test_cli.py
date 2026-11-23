@@ -100,6 +100,13 @@ def test_repo_names_accept_pasted_github_links(capsys):
             repo_name(bad)
 
 
+def test_repeated_repos_are_scanned_once_whatever_the_case():
+    from issue_scout.cli import unique_repos
+
+    assert unique_repos(["Textualize/Rich", "pytest-dev/pytest", "textualize/rich", "pytest-dev/pytest"]) == [
+        "Textualize/Rich", "pytest-dev/pytest"]
+
+
 def test_readme_documents_every_option():
     from pathlib import Path
 
