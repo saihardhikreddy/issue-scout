@@ -130,3 +130,14 @@ def test_repo_search_fills_the_limit_despite_overlap(monkeypatch):
     assert {"o/gfi0", "o/hw0"} <= set(repos)          # both searches contribute
     assert discover.search_repos(DiscoverOptions(repo_limit=40)) == list(dict.fromkeys(
         r for pair in zip(hits["good-first-issues"], hits["help-wanted-issues"]) for r in pair))
+
+
+def test_repeated_labels_languages_and_topics_are_searched_once():
+    opts = DiscoverOptions(labels=["bug", "Bug", " bug "], languages=["python", "Python"],
+                           topics=["cli", "CLI"])
+    issue_queries = build_issue_queries(opts)
+    assert len(issue_queries) == 1
+    assert issue_queries[0].count("language:") == 1
+    assert issue_queries[0].endswith("label:bug")
+    for query in build_repo_queries(opts):
+        assert query.count("language:") == 1 and query.count("topic:") == 1

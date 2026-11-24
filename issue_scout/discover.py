@@ -69,11 +69,27 @@ def _quote(value: str) -> str:
     return f'"{value}"' if " " in value else value
 
 
+def _unique(values: list[str]) -> list[str]:
+    """Drop repeats that differ only in case or surrounding spaces, keeping the first spelling.
+
+    GitHub search ignores case, so "--label bug --label Bug" used to run the same search twice,
+    and each copy got only part of the --issue-search-limit budget.
+    """
+    seen: set[str] = set()
+    kept = []
+    for value in values:
+        key = value.strip().lower()
+        if key and key not in seen:
+            seen.add(key)
+            kept.append(value.strip())
+    return kept
+
+
 def build_repo_queries(opts: DiscoverOptions) -> list[str]:
     base = [f"stars:>={opts.min_stars}", f"pushed:>={_since(opts.max_age_days)}",
             "archived:false", "fork:false", "is:public"]
-    base += [f"language:{_quote(lang)}" for lang in opts.languages]
-    base += [f"topic:{_quote(topic)}" for topic in opts.topics]
+    base += [f"language:{_quote(lang)}" for lang in _unique(opts.languages)]
+    base += [f"topic:{_quote(topic)}" for topic in _unique(opts.topics)]
     if opts.extra_query:
         base.append(opts.extra_query)
     # Repo search can't OR these two qualifiers, so ask twice.
@@ -83,14 +99,15 @@ def build_repo_queries(opts: DiscoverOptions) -> list[str]:
 def build_issue_queries(opts: DiscoverOptions) -> list[str]:
     base = ["is:issue", "is:open", "no:assignee", "-linked:pr", "archived:false",
             f"created:>={_since(opts.max_age_days)}", f"comments:<={opts.max_comments}"]
-    base += [f"language:{_quote(lang)}" for lang in opts.languages]  # several are OR'ed
+    base += [f"language:{_quote(lang)}" for lang in _unique(opts.languages)]  # several are OR'ed
     if opts.extra_query:
         base.append(opts.extra_query)
     base.append("sort:created-desc")
-    if not opts.labels:
+    labels = _unique(opts.labels)
+    if not labels:
         return [" ".join(base)]
     # One query per label keeps each label's results from crowding out the others.
-    return [" ".join(base + [f"label:{_quote(label)}"]) for label in opts.labels]
+    return [" ".join(base + [f"label:{_quote(label)}"]) for label in labels]
 
 
 def _paged_search(query: str, kind: str, limit: int, node_fields: str) -> list[dict]:
