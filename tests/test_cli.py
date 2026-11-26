@@ -1,8 +1,8 @@
 import argparse
 from datetime import datetime, timedelta, timezone
 
-from issue_scout.cli import build_parser, color, wants_color
-from issue_scout.scout import Issue, keep_issue, lit
+from issue_scout.cli import build_parser, color, report_to_dict, wants_color
+from issue_scout.scout import Issue, Policy, RepoReport, keep_issue, lit
 
 
 def _args(**kw):
@@ -114,3 +114,12 @@ def test_readme_documents_every_option():
     options = {opt for action in build_parser()._actions for opt in action.option_strings if opt.startswith("--")}
     missing = sorted(opt for opt in options - {"--help"} if f"`{opt}`" not in readme)
     assert not missing, f"options missing from the README table: {missing}"
+
+
+def test_repo_json_follows_top_and_policy_only():
+    issues = [Issue("o/r", n, "t", "u", datetime.now(timezone.utc), 0, False, []) for n in (1, 2, 3)]
+    report = RepoReport("o/r", 10, Policy("none"), issues)
+    assert [i["number"] for i in report_to_dict(report)["issues"]] == [1, 2, 3]  # no --top: all
+    assert [i["number"] for i in report_to_dict(report, top=2)["issues"]] == [1, 2]
+    only = report_to_dict(report, top=2, policy_only=True)
+    assert only["issues"] == [] and only["policy"]["verdict"] == "none"

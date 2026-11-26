@@ -171,9 +171,12 @@ def issue_dict(i: Issue) -> dict:
     return d
 
 
-def report_to_dict(r: RepoReport) -> dict:
+def report_to_dict(r: RepoReport, top: int | None = None, policy_only: bool = False) -> dict:
+    """One named repo for --json. `top` and `policy_only` trim the issue list the way they trim the
+    text report; the JSON used to list every kept issue whatever --top or --policy-only said."""
+    issues = [] if policy_only else r.issues[:top]
     return {"repo": r.repo, "stars": r.stars, "error": r.error, "policy": policy_dict(r.policy),
-            "issues": [issue_dict(i) for i in r.issues]}
+            "issues": [issue_dict(i) for i in issues]}
 
 
 def print_reports(reports: list[RepoReport], args: argparse.Namespace) -> None:
@@ -282,7 +285,7 @@ def main(argv: list[str] | None = None) -> int:
     reports.sort(key=lambda r: (r.error is not None, POLICY_ORDER[r.policy.verdict],
                                 -(r.issues[0].score if r.issues else -99)))
     if args.json:
-        print(json.dumps([report_to_dict(r) for r in reports], indent=2))
+        print(json.dumps([report_to_dict(r, args.top, args.policy_only) for r in reports], indent=2))
     else:
         print_reports(reports, args)
     return 1 if all(r.error for r in reports) else 0
